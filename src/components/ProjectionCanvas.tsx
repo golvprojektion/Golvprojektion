@@ -1,37 +1,76 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 
-const ProjectionCanvas = () => {
-    const canvasRef = useRef(null);
+interface ProjectionCanvasProps {
+  isPlaying: boolean;
+  brightness: number;
+  color: string;
+  speed: number;
+  scale: number;
+}
 
-    useEffect(() => {
-        const canvas = canvasRef.current;
-        const context = canvas.getContext('2d');
+const ProjectionCanvas: React.FC<ProjectionCanvasProps> = ({
+  isPlaying,
+  brightness,
+  color,
+  speed,
+  scale
+}) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>();
+  const timeRef = useRef(0);
 
-        const draw = () => {
-            // Clear the canvas
-            context.clearRect(0, 0, canvas.width, canvas.height);
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-            // Your drawing logic goes here, e.g., rendering projections
-            context.fillStyle = 'rgba(255, 0, 0, 0.5)'; // Example Projection
-            context.fillRect(10, 10, 150, 100);
-        };
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
 
-        draw(); // Initial draw
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-        // Optionally handle window resizing
-        const handleResize = () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-            draw();
-        };
+    const animate = () => {
+      if (isPlaying) {
+        timeRef.current += speed * 0.016;
+      }
 
-        window.addEventListener('resize', handleResize);
-        return () => {
-            window.removeEventListener('resize', handleResize);
-        };
-    }, []);
+      ctx.fillStyle = '#0a0a0a';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    return <canvas ref={canvasRef} width={window.innerWidth} height={window.innerHeight} />;
+      ctx.save();
+      ctx.globalAlpha = brightness / 100;
+      ctx.fillStyle = color;
+
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+      const baseRadius = 50 * scale;
+      const radius = baseRadius + Math.sin(timeRef.current) * 20;
+
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.restore();
+
+      animationRef.current = requestAnimationFrame(animate);
+    };
+
+    animationRef.current = requestAnimationFrame(animate);
+
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [isPlaying, brightness, color, speed, scale]);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="projection-canvas"
+      style={{ flex: 1 }}
+    />
+  );
 };
 
 export default ProjectionCanvas;
