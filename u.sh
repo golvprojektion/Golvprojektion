@@ -1,15 +1,20 @@
 #!/usr/bin/env bash
 
-echo "=== u.sh — Pure Magenta Blob Overhaul (Final) ==="
+echo "=== u.sh — Golvprojektion Magenta Blob Setup ==="
 
-# Ensure jq
+# 0. Ensure jq
 if ! command -v jq &> /dev/null
 then
-    sudo apt-get update && sudo apt-get install -y jq
+  echo "→ Installing jq"
+  sudo apt-get update && sudo apt-get install -y jq
 fi
 
+# 1. Clean node_modules and lock
+echo "→ Cleaning node_modules and lockfile"
 rm -rf node_modules package-lock.json
 
+# 2. Normalize package.json for Vite + React 18 + TS5
+echo "→ Updating package.json"
 tmpfile=$(mktemp)
 
 jq '
@@ -30,39 +35,95 @@ jq '
   )
 ' package.json > "$tmpfile" && mv "$tmpfile" package.json
 
-# index.html
+# 3. index.html
+echo "→ Writing index.html"
 cat << 'EOF' > index.html
 <!DOCTYPE html>
-<html>
-  <head><meta charset="UTF-8" /><title>Blob</title></head>
-  <body style="margin:0; overflow:hidden; background:#000100;">
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Golvprojektion Blob</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+  <body style="margin:0; padding:0; overflow:hidden; background:#000100;">
     <div id="root"></div>
     <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>
 EOF
 
-# vite.config.ts
+# 4. vite.config.ts
+echo "→ Writing vite.config.ts"
 cat << 'EOF' > vite.config.ts
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react-swc';
+
 export default defineConfig({
   plugins: [react()],
-  resolve: { alias: { src: '/src' } }
+  resolve: {
+    alias: {
+      src: '/src'
+    }
+  }
 });
 EOF
 
-# theme
-mkdir -p src/theme
-cat << 'EOF' > src/theme/index.ts
-export const Pink = { pure:"#F0F", alt:"#F0B", alt2:"#F2A" };
-export const Turquoise = { pure:"#00FAD0", strong:"#00D4A8" };
-export const Floor = { base:"#F5F2EB" };
-export default { Pink, Turquoise, Floor };
+# 5. tsconfig.json (minimal, Vite-friendly)
+echo "→ Writing tsconfig.json"
+cat << 'EOF' > tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": "./",
+    "paths": {
+      "src/*": ["src/*"]
+    }
+  },
+  "include": ["src"]
+}
 EOF
 
-# LiquidPinkBlob.tsx
-mkdir -p src/components
+# 6. Ensure src structure
+echo "→ Ensuring src structure"
+mkdir -p src src/components src/theme
+
+# 7. theme/index.ts
+echo "→ Writing src/theme/index.ts"
+cat << 'EOF' > src/theme/index.ts
+export const Pink = {
+  pure: "#F0F",
+  alt: "#F0B",
+  alt2: "#F2A"
+};
+
+export const Turquoise = {
+  pure: "#00FAD0",
+  strong: "#00D4A8"
+};
+
+export const Floor = {
+  base: "#F5F2EB"
+};
+
+const Theme = { Pink, Turquoise, Floor };
+export default Theme;
+EOF
+
+# 8. LiquidPinkBlob.tsx
+echo "→ Writing src/components/LiquidPinkBlob.tsx"
 cat << 'EOF' > src/components/LiquidPinkBlob.tsx
 import { useRef, useEffect } from "react";
 import Theme from "src/theme";
@@ -93,7 +154,7 @@ export default function LiquidPinkBlob() {
 
       ctx.clearRect(0, 0, w, h);
 
-      // Background
+      // Background: projection-friendly off-white
       ctx.fillStyle = Theme.Floor.base;
       ctx.fillRect(0, 0, w, h);
 
@@ -102,7 +163,7 @@ export default function LiquidPinkBlob() {
 
       ctx.beginPath();
 
-      const waves = 11; // prime
+      const waves = 11; // prime for nice irregularity
       for (let i = 0; i <= waves; i++) {
         const angle = (i / waves) * Math.PI * 2;
 
@@ -146,26 +207,52 @@ export default function LiquidPinkBlob() {
         inset: 0,
         width: "100vw",
         height: "100vh",
-        display: "block",
+        display: "block"
       }}
     />
   );
 }
 EOF
 
-# App.tsx
+# 9. App.tsx
+echo "→ Writing src/App.tsx"
 cat << 'EOF' > src/App.tsx
 import LiquidPinkBlob from "src/components/LiquidPinkBlob";
-export default function App() { return <LiquidPinkBlob />; }
+
+export default function App() {
+  return <LiquidPinkBlob />;
+}
 EOF
 
+# 10. index.tsx
+echo "→ Writing src/index.tsx"
+cat << 'EOF' > src/index.tsx
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+
+const rootElement = document.getElementById("root") as HTMLElement;
+const root = ReactDOM.createRoot(rootElement);
+
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);
+EOF
+
+# 11. Install deps
+echo "→ Installing dependencies (forced)"
 npm install --force
 
-# git commit + push
+# 12. Git add/commit/push
 if git rev-parse --git-dir > /dev/null 2>&1; then
+  echo "→ Git repo detected — committing and pushing"
   git add .
-  git commit -m "Final pure magenta blob implementation" || true
-  git push || true
+  git commit -m "Magenta prime-wave blob setup via u.sh" || echo "→ Nothing to commit"
+  git push || echo "→ Push failed (check remote)"
 fi
 
+# 13. Start dev server
+echo "=== Starting dev server ==="
 npm run dev

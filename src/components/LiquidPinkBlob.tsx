@@ -27,7 +27,7 @@ export default function LiquidPinkBlob() {
 
       ctx.clearRect(0, 0, w, h);
 
-      // Background
+      // Background: projection-friendly off-white
       ctx.fillStyle = Theme.Floor.base;
       ctx.fillRect(0, 0, w, h);
 
@@ -36,7 +36,7 @@ export default function LiquidPinkBlob() {
 
       ctx.beginPath();
 
-      const waves = 11; // prime
+      const waves = 11; // prime for nice irregularity
       for (let i = 0; i <= waves; i++) {
         const angle = (i / waves) * Math.PI * 2;
 
@@ -80,7 +80,7 @@ export default function LiquidPinkBlob() {
         inset: 0,
         width: "100vw",
         height: "100vh",
-        display: "block",
+        display: "block"
       }}
     />
   );
