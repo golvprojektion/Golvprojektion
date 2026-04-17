@@ -1,7 +1,6 @@
 import { useRef, useEffect } from "react";
-import Theme from "src/theme";
 
-export default function LiquidBlob() {
+export default function LiquidPinkBlob() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -19,65 +18,50 @@ export default function LiquidBlob() {
     let t = 0;
 
     const loop = () => {
-      t += 0.015;
+      t += 0.012;
 
       const w = canvas.width;
       const h = canvas.height;
-      const r = Math.min(w, h) * 0.18;
+      const r = Math.min(w, h) * 0.22;
 
       ctx.clearRect(0, 0, w, h);
 
-      // Background
-      ctx.fillStyle = Theme.Floor.base;
+      // Background (projection-friendly off-white)
+      ctx.fillStyle = "#F5F2EB";
       ctx.fillRect(0, 0, w, h);
-
-      // Micro diagonal stripes
-      ctx.globalAlpha = 0.06;
-      ctx.strokeStyle = "#767";
-      ctx.lineWidth = 1;
-      for (let i = -h; i < w; i += 12) {
-        ctx.beginPath();
-        ctx.moveTo(i, 0);
-        ctx.lineTo(i + h, h);
-        ctx.stroke();
-      }
-      ctx.globalAlpha = 1;
 
       const cx = w / 2;
       const cy = h / 2;
 
       ctx.beginPath();
 
-      const waves = 48;
+      const waves = 11; // prime
       for (let i = 0; i <= waves; i++) {
         const angle = (i / waves) * Math.PI * 2;
-        const wave = Math.sin(angle * 3 + t * 2) * 14;
-        const radius = r + wave;
+
+        // multi-frequency wobble
+        const w1 = Math.sin(angle * 11 + t * 3) * 12;
+        const w2 = Math.sin(angle * 13 + t * 2) * 6;
+        const w3 = Math.sin(angle * 17 + t * 4) * 4;
+
+        const radius = r + w1 + w2 + w3;
 
         const x = cx + Math.cos(angle) * radius;
         const y = cy + Math.sin(angle) * radius;
 
         if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        else ctx.quadraticCurveTo(x, y, x, y);
       }
 
-      // Pink gradient fill
-      const grad = ctx.createRadialGradient(cx, cy, r * 0.2, cx, cy, r * 1.2);
-      grad.addColorStop(0, Theme.Pink.pinkSoft);
-      grad.addColorStop(0.5, Theme.Pink.pink);
-      grad.addColorStop(1, Theme.Pink.pinkHot);
-
-      ctx.fillStyle = grad;
+      // Pure magenta fill
+      ctx.fillStyle = "#F0F";
       ctx.fill();
 
-      // Turquoise shimmer outline
-      ctx.strokeStyle = Theme.Turquoise.accent;
-      ctx.lineWidth = 4;
-      ctx.shadowBlur = 25;
-      ctx.shadowColor = Theme.Turquoise.accent;
-      ctx.stroke();
-
+      // Thick turquoise outline (less blue)
+      ctx.strokeStyle = "#00FAD0";
+      ctx.lineWidth = 18;
       ctx.shadowBlur = 0;
+      ctx.stroke();
 
       requestAnimationFrame(loop);
     };

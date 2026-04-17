@@ -1,5 +1,2 @@
-import LiquidBlob from "src/components/LiquidBlob";
-
-export default function App() {
-  return <LiquidBlob />;
-}
+import LiquidPinkBlob from "src/components/LiquidPinkBlob";
+export default function App() { return <LiquidPinkBlob />; }
