@@ -1,21 +1,9 @@
-// PrimeWaveEngine: generates organic multi-frequency motion using primes
-export interface PrimeWaveConfig {
-  baseRadius: number;
-  t: number;
-  angle: number;
-}
-
-const PRIMES = [11, 13, 17, 19];
-
-export function primeRadius({ baseRadius, t, angle }: PrimeWaveConfig): number {
-  let r = baseRadius;
-  const amps = [12, 7, 5, 3];
-
-  for (let i = 0; i < PRIMES.length; i++) {
-    const p = PRIMES[i];
-    const amp = amps[i];
-    r += Math.sin(angle * p + t * (3 + i)) * amp;
-  }
-
-  return r;
+export function primeRadius(base: number, t: number, angle: number): number {
+  return (
+    base +
+    Math.sin(angle * 11 + t * 3) * 12 +
+    Math.sin(angle * 13 + t * 2) * 7 +
+    Math.sin(angle * 17 + t * 4) * 5 +
+    Math.sin(angle * 19 + t * 1.5) * 3
+  );
 }
