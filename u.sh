@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-echo "=== u.sh — Full Vite + React 18 + TS5 Upgrade ==="
+echo "=== u.sh — Full Vite + React 18 + TS5 + Theme System Upgrade ==="
 
 # 0. Ensure jq exists
 if ! command -v jq &> /dev/null
@@ -64,15 +64,83 @@ export default defineConfig({
 EOF
 fi
 
-# 6. Install dependencies (force because CRA is gone)
+# 6. Create theme folder + files
+echo "→ Installing theme system"
+
+mkdir -p src/theme
+
+cat << 'EOF' > src/theme/pink.ts
+export const Pink = {
+  background: "#000100",
+  backgroundSoft: "#1a0012",
+
+  pink: "#FFAACC",
+  pinkSoft: "#FFCCE0",
+  pinkHot: "#FF00CC",
+  pinkGlow: "#FF66DD",
+
+  text: "#FFFFFF",
+  textPink: "#FFAAEE",
+
+  border: "#FF99CC",
+  borderStrong: "#FF00AA",
+
+  glow: "0 0 20px #FF66DD",
+  glowStrong: "0 0 40px #FF00CC"
+};
+export default Pink;
+EOF
+
+cat << 'EOF' > src/theme/turquoise.ts
+export const Turquoise = {
+  accent: "#00F5FF",
+  accentSoft: "#A0FFFF",
+  accentDeep: "#00C4CC",
+  accentGlow: "0 0 20px #00F5FF",
+
+  line: "#00E0FF",
+  lineStrong: "#00BBD4"
+};
+export default Turquoise;
+EOF
+
+cat << 'EOF' > src/theme/floor.ts
+export const Floor = {
+  // Matte off‑white wood‑ish tone for projection
+  base: "#F5F2EB",
+  grainLight: "#E8E3D9",
+  grainDark: "#D6D0C4",
+
+  // For UI overlays on floor backgrounds
+  shadow: "rgba(0,0,0,0.15)",
+  shadowStrong: "rgba(0,0,0,0.35)"
+};
+export default Floor;
+EOF
+
+cat << 'EOF' > src/theme/index.ts
+import Pink from "./pink";
+import Turquoise from "./turquoise";
+import Floor from "./floor";
+
+export const Theme = {
+  Pink,
+  Turquoise,
+  Floor
+};
+
+export default Theme;
+EOF
+
+# 7. Install dependencies (force because CRA is gone)
 echo "→ Installing dependencies (forced)"
 npm install --force
 
-# 7. Optional: auto git commit + push
+# 8. Optional: auto git commit + push
 if git rev-parse --git-dir > /dev/null 2>&1; then
   echo "→ Git repo detected — committing changes"
   git add .
-  git commit -m "Automated Vite upgrade via u.sh" || echo "→ Nothing to commit"
+  git commit -m "Automated Vite + Theme upgrade via u.sh" || echo "→ Nothing to commit"
   git push || echo "→ Push failed (maybe no remote?)"
 fi
 
