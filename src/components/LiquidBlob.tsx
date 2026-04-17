@@ -59,7 +59,7 @@ export default function LiquidPinkBlob() {
 
       // Thick turquoise outline (less blue)
       ctx.strokeStyle = "#00FAD0";
-      ctx.lineWidth = 18;
+      ctx.lineWidth = 28;
       ctx.shadowBlur = 0;
       ctx.stroke();
 
