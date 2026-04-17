@@ -1,76 +1,80 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# Create project directories
-mkdir -p src/components src/utils src/tests docs
+echo "=== u.sh — Full Vite + React 18 + TS5 Upgrade ==="
 
-# Create React components
-cat <<EOF > src/components/ExampleComponent.tsx
-import React from 'react';
+# 0. Ensure jq exists
+if ! command -v jq &> /dev/null
+then
+    echo "→ Installing jq"
+    sudo apt-get update && sudo apt-get install -y jq
+fi
 
-const ExampleComponent: React.FC = () => {
-    return <div>Hello, World!</div>;
-};
+# 1. Remove CRA artifacts
+echo "→ Cleaning old CRA files"
+rm -rf node_modules package-lock.json
 
-export default ExampleComponent;
-EOF
+# 2. Rewrite package.json cleanly (remove CRA, add Vite)
+echo "→ Rewriting package.json"
+tmpfile=$(mktemp)
 
-# Create utility functions
-cat <<EOF > src/utils/util.ts
-export const exampleUtil = (): string => {
-    return 'Utility function';
-};
-EOF
+jq '
+  .dependencies |= (
+    .react = "^18.3.1" |
+    .["react-dom"] = "^18.3.1" |
+    del(.["react-scripts"])
+  ) |
+  .scripts = {
+    dev: "vite",
+    build: "vite build",
+    preview: "vite preview"
+  } |
+  .devDependencies |= (
+    .vite = "^8.0.8" |
+    .["@vitejs/plugin-react-swc"] = "^4.3.0" |
+    .typescript = "^5.9.3"
+  )
+' package.json > "$tmpfile" && mv "$tmpfile" package.json
 
-# Create test file
-cat <<EOF > src/tests/ExampleComponent.test.tsx
-import { render } from '@testing-library/react';
-import ExampleComponent from '../components/ExampleComponent';
+# 3. Move index.html if needed
+if [ -f "public/index.html" ]; then
+  echo "→ Moving index.html to project root"
+  mv public/index.html ./index.html
+fi
 
-test('renders without crashing', () => {
-    render(<ExampleComponent />);
+# 4. Fix index.html script tag
+echo "→ Updating index.html script tag"
+sed -i 's|/static/js/bundle.js|/src/index.tsx|g' index.html 2>/dev/null
+sed -i 's|<script.*</script>|<script type="module" src="/src/index.tsx"></script>|g' index.html
+
+# 5. Create vite.config.ts if missing
+if [ ! -f "vite.config.ts" ]; then
+  echo "→ Creating vite.config.ts"
+  cat << 'EOF' > vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react-swc';
+
+export default defineConfig({
+  plugins: [react()],
+  resolve: {
+    alias: {
+      src: '/src'
+    }
+  }
 });
 EOF
+fi
 
-# Create configuration files
-cat <<EOF > tsconfig.json
-{
-    "compilerOptions": {
-        "target": "es5",
-        "module": "commonjs",
-        "jsx": "react",
-        "strict": true,
-        "esModuleInterop": true,
-        "skipLibCheck": true,
-        "forceConsistentCasingInFileNames": true
-    },
-    "include": ["src"]
-}
-EOF
+# 6. Install dependencies (force because CRA is gone)
+echo "→ Installing dependencies (forced)"
+npm install --force
 
-cat <<EOF > .eslintrc.json
-{
-    "extends": "react-app",
-    "rules": {
-        // Add your custom rules here
-    }
-}
-EOF
+# 7. Optional: auto git commit + push
+if git rev-parse --git-dir > /dev/null 2>&1; then
+  echo "→ Git repo detected — committing changes"
+  git add .
+  git commit -m "Automated Vite upgrade via u.sh" || echo "→ Nothing to commit"
+  git push || echo "→ Push failed (maybe no remote?)"
+fi
 
-# Create documentation files
-cat <<EOF > docs/README.md
-# Project Title
-
-## Description
-This project is an interactive floor projection based on React and TypeScript.
-
-## Installation
-Run `npm install` to install all dependencies.
-EOF
-
-# Commit and push changes
-git add .
-git commit -m "Initial project structure and files created on 2026-04-14"
-git push
-
-# Install npm packages
-npm install
+echo "=== Done! Starting dev server ==="
+npm run dev
